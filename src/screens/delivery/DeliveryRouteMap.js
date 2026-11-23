@@ -88,10 +88,9 @@ export default function DeliveryRouteMap({ o, onStartJourney, journeyStarted }) 
           {o.shopPhone ? <Button title="Call Shop" Icon={Phone} variant="outline" style={{ flex: 1 }} onPress={() => Linking.openURL(`tel:${o.shopPhone}`).catch(() => {})} /> : null}
           {o.customerPhone ? <Button title="Call Customer" Icon={Phone} variant="outline" style={{ flex: 1 }} onPress={() => Linking.openURL(`tel:${o.customerPhone}`).catch(() => {})} /> : null}
         </View>
-        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-          {o.shopAddress ? <Button title="Navigate" Icon={MapPin} variant="outline" style={{ flex: 1 }} onPress={() => directions(null, o.shopAddress)} /> : null}
-          {onStartJourney && !journeyStarted ? <Button title="Start Journey" Icon={Navigation} style={{ flex: 1 }} onPress={onStartJourney} /> : null}
-        </View>
+        {/* Secondary: Navigate (full width); primary: Start Journey on its own row at the bottom. */}
+        {o.shopAddress ? <Button title="Navigate to Shop" Icon={MapPin} variant="outline" style={{ marginTop: 8 }} onPress={() => directions(null, o.shopAddress)} /> : null}
+        {onStartJourney && !journeyStarted ? <Button title="Start Journey" Icon={Navigation} style={{ marginTop: 10 }} onPress={onStartJourney} /> : null}
       </View>
     </View>
   );
