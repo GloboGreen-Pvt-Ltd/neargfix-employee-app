@@ -4,7 +4,7 @@ import { Text, TextInput } from '../../components/Typography';
 import { useFocusEffect } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import {
-  Camera, CircleCheck, ClipboardList, Handshake, RefreshCw, Route, CircleX, KeyRound, MapPin, Navigation, PackageCheck, Phone, RotateCcw, Store, Truck, X,
+  Camera, Check, CircleCheck, ClipboardList, Handshake, RefreshCw, Route, CircleX, KeyRound, MapPin, Navigation, PackageCheck, Phone, RotateCcw, Store, Truck, X,
 } from 'lucide-react-native';
 import { getRepairDelivery, repairDeliveryAction } from '../../api/repairDeliveries';
 import { uploadMedia } from '../../api/media';
@@ -176,9 +176,9 @@ export default function RepairDeliveryScreen({ navigation, route }) {
   );
 
   const collect = () => {
-    if (!identifier.trim()) { notify('IMEI / serial needed', 'Enter the IMEI / serial number from the device.', { type: 'warning' }); return; }
+    // IMEI / serial is optional; when entered, the server still checks it matches the device.
     if (uploaded.length < 2) { notify('Add photos', 'Take at least 2 photos of the device.', { type: 'warning' }); return; }
-    act('collect', { identifier: identifier.trim(), accessories: acc, photos: uploaded }, 'Device collected');
+    act('collect', { identifier: identifier.trim() || null, accessories: acc, photos: uploaded }, 'Device collected');
   };
   const complete = async () => {
     if (doneUrls(proof).length < 1) { notify('Add proof', 'Take a photo of the device handed to the customer.', { type: 'warning' }); return; }
@@ -270,7 +270,7 @@ export default function RepairDeliveryScreen({ navigation, route }) {
 
         {st === 'ACCEPTED' && d.releasedAt ? (
           <Card title="Shop Collection">
-            <Text style={{ fontSize: rf(13), color: '#6B7280' }}>IMEI / Serial number *</Text>
+            <Text style={{ fontSize: rf(13), color: '#6B7280' }}>IMEI / Serial number (optional)</Text>
             <TextInput value={identifier} onChangeText={(t) => setIdentifier(t.replace(/[^0-9A-Za-z]/g, '').toUpperCase().slice(0, 20))} placeholder="Dial *#06# or read the label"
               placeholderTextColor="#9CA3AF" autoCapitalize="characters" style={{ height: rs(48), borderRadius: rs(12), borderWidth: 1, borderColor: SK.line, paddingHorizontal: rs(12), fontSize: rf(15), color: SK.ink, marginTop: rs(6) }} />
             <Text style={{ fontSize: rf(13), color: '#6B7280', marginTop: rs(12) }}>Accessories handed over</Text>
@@ -377,18 +377,29 @@ export default function RepairDeliveryScreen({ navigation, route }) {
         {(d.events || []).length ? (
           <Card>
             <Head Icon={ClipboardList} title="History" />
-            {d.events.slice().reverse().map((e, i, all) => (
-              <View key={`${e.at}-${i}`} style={{ flexDirection: 'row', marginLeft: rs(6) }}>
-                <View style={{ alignItems: 'center', width: rs(12) }}>
-                  <View style={{ width: rs(10), height: rs(10), borderRadius: rs(5), backgroundColor: i === 0 ? SK.teal : '#C9CED6', marginTop: rs(5) }} />
-                  {i < all.length - 1 ? <View style={{ flex: 1, width: 1.5, backgroundColor: '#D1D5DB', marginTop: rs(2) }} /> : null}
+            {/* Timeline: oldest → latest; every recorded step is done (teal tick), joined by a
+                continuous teal line; the latest step is ringed and labelled in teal. */}
+            {d.events.map((e, i, all) => {
+              const last = i === all.length - 1;
+              return (
+                <View key={`${e.at}-${i}`} style={{ flexDirection: 'row', marginTop: i ? 0 : rs(4) }}>
+                  <View style={{ alignItems: 'center', width: rs(26) }}>
+                    <View style={{
+                      width: rs(22), height: rs(22), borderRadius: rs(11), alignItems: 'center', justifyContent: 'center', backgroundColor: SK.teal,
+                      borderWidth: last ? 3 : 0, borderColor: '#CDE7EA',
+                    }}>
+                      <Check size={rs(12)} color="#FFFFFF" strokeWidth={3} />
+                    </View>
+                    {!last ? <View style={{ flex: 1, width: 2, minHeight: rs(14), backgroundColor: SK.teal }} /> : null}
+                  </View>
+                  <View style={{ flex: 1, marginLeft: rs(12), paddingBottom: last ? 0 : rs(14) }}>
+                    <Text style={{ fontSize: rf(13.5), fontWeight: '800', color: last ? SK.teal : SK.ink, marginTop: rs(1) }}>{e.label}</Text>
+                    {e.note ? <Text style={{ fontSize: rf(12), color: '#374151', marginTop: rs(2) }}>{e.note}</Text> : null}
+                    {e.at ? <Text style={{ fontSize: rf(11.5), color: '#6B7280', marginTop: rs(1) }}>{new Date(e.at).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })}</Text> : null}
+                  </View>
                 </View>
-                <View style={{ flex: 1, marginLeft: rs(12), paddingBottom: i < all.length - 1 ? rs(12) : 0 }}>
-                  <Text style={{ fontSize: rf(13.5), fontWeight: '700', color: SK.ink }}>{e.label}</Text>
-                  <Text style={{ fontSize: rf(12), color: '#6B7280' }}>{[e.note, e.at ? new Date(e.at).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : null].filter(Boolean).join(' · ')}</Text>
-                </View>
-              </View>
-            ))}
+              );
+            })}
           </Card>
         ) : null}
 
