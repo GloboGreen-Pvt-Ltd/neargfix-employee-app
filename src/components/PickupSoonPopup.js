@@ -67,7 +67,7 @@ const legsOf = (b) => (b?._rd || b?._buy
 const prefixOf = (b) => (b?._buy ? 'buy:' : b?._rd ? 'rd:' : '');
 const taskId = (b) => (b?._buy ? (b.orderNumber || `#${b.id}`) : b?._rd ? (b.bookingNumber || `#${b.id}`) : trackingId(b));
 const imageOf = (b) => b?.deviceImageUrl || b?.modelImageUrl || b?.frontImageUrl || null;
-const clock = (d) => d.toLocaleTimeString('en-IN', { hour: 'numeric', minute: '2-digit', hour12: true });
+const clock = (d) => d.toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true });
 
 export default function PickupSoonPopup({ pickups, navigation, onChanged }) {
   const [busy, setBusy] = useState('');
@@ -117,12 +117,22 @@ export default function PickupSoonPopup({ pickups, navigation, onChanged }) {
     }))));
   }, [scheduleSig]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Reminder queue: due within LEAD_MIN minutes, not dismissed, soonest first.
+  // Two separate popups, soonest first, each dismissed independently:
+  //  SOON — the 10-minute reminder (slot starts within LEAD_MIN minutes);
+  //  NEW  — a pickup awaiting Accept / Reject, shown as soon as it is assigned,
+  //         whatever the slot time (a later day, or a slot that already started).
   const queue = useMemo(() => (pickups || [])
     .map((b) => ({ b, at: startOf(b), stage: stageOf(b) }))
-    .filter(({ b, at, stage }) => stage && at && at.getTime() > now && at.getTime() - now <= LEAD_MIN * 60000
-      && !(dismissed || {})[`${me || '-'}:${prefixOf(b)}${b.id}@${at.getTime()}`])
-    .map((x) => ({ ...x, key: `${me || '-'}:${prefixOf(x.b)}${x.b.id}@${x.at.getTime()}` }))
+    .filter(({ stage, at }) => stage && at)
+    .map((x) => {
+      const ms = x.at.getTime() - now;
+      const kind = ms > 0 && ms <= LEAD_MIN * 60000 ? 'SOON' : x.stage.pending ? 'NEW' : null;
+      const key = kind === 'SOON'
+        ? `${me || '-'}:${prefixOf(x.b)}${x.b.id}@${x.at.getTime()}`
+        : `${me || '-'}:new:${prefixOf(x.b)}${x.b.id}@${x.at.getTime()}`;
+      return { ...x, kind, key };
+    })
+    .filter((x) => x.kind && !(dismissed || {})[x.key])
     .sort((x, y) => x.at - y.at), [pickups, now, dismissed, me]);
 
   // Keep showing the open one while it is still due; else the next in the queue.
@@ -143,8 +153,14 @@ export default function PickupSoonPopup({ pickups, navigation, onChanged }) {
   };
 
   if (!current || !focused) return null;
-  const { b, at, stage, key } = current;
+  const { b, at, stage, key, kind } = current;
   const left = Math.max(0, Math.floor((at.getTime() - now) / 1000));
+  // Actual slot day in IST ("Today" / "Tomorrow" / "Mon, 24 Nov"), not always "Today".
+  const istDay = (d) => d.toLocaleDateString('en-CA', { timeZone: 'Asia/Kolkata' });
+  const dayLabel = istDay(at) === istDay(new Date(now)) ? 'Today'
+    : istDay(at) === istDay(new Date(now + 86400000)) ? 'Tomorrow'
+      : at.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata', weekday: 'short', day: 'numeric', month: 'short' });
+  const started = at.getTime() <= now;
   const countdown = `${String(Math.floor(left / 60)).padStart(2, '0')}:${String(left % 60).padStart(2, '0')}`;
   const img = b._buy ? b.productImage : imageOf(b);
   const view = () => {
@@ -167,8 +183,9 @@ export default function PickupSoonPopup({ pickups, navigation, onChanged }) {
       else if (kind === 'accept') await (b._rd ? repairDeliveryAction(b.id, 'accept') : acceptPickup(b.id));
       else await (b._rd ? repairDeliveryAction(b.id, 'decline', { reason }) : declinePickup(b.id, { reason }));
       notify(kind === 'accept' ? 'Accepted' : 'Rejected', kind === 'accept' ? 'Task accepted.' : 'The shop will reassign it.', { type: 'success' });
-      dismiss(key);
       onChanged?.();
+      // Accepted: open that task's own page (Pickup Details / Repair / Buy Delivery). Rejected: just close.
+      if (kind === 'accept') view(); else dismiss(key);
     } catch (e) {
       notify('Could not update', e?.message || 'Check your internet and try again.', { type: 'error' });
     } finally { setBusy(''); }
@@ -201,8 +218,14 @@ export default function PickupSoonPopup({ pickups, navigation, onChanged }) {
               <BellRing size={rs(24)} color={TEAL} />
             </View>
             <View style={{ flex: 1, marginLeft: rs(12), marginRight: rs(24) }}>
-              <Text style={{ fontSize: rf(17), fontWeight: '800', color: '#111111' }}>Pickup in {LEAD_MIN} minutes</Text>
-              <Text style={{ fontSize: rf(12.5), color: '#6B7280', marginTop: 1 }}>{stage.line} · starts in <Text style={{ fontWeight: '800', color: TEAL }}>{countdown}</Text></Text>
+              <Text style={{ fontSize: rf(17), fontWeight: '800', color: '#111111' }}>{kind === 'NEW' ? `New ${b._rd || b._buy ? 'delivery' : 'pickup'} assigned` : `Pickup in ${LEAD_MIN} minutes`}</Text>
+              {kind === 'NEW' ? (
+                <Text style={{ fontSize: rf(12.5), color: '#6B7280', marginTop: 1 }}>
+                  {started ? 'Slot already started · ' : `${dayLabel}, ${clock(at)} · `}<Text style={{ fontWeight: '800', color: TEAL }}>Accept or reject</Text>
+                </Text>
+              ) : (
+                <Text style={{ fontSize: rf(12.5), color: '#6B7280', marginTop: 1 }}>{stage.line} · starts in <Text style={{ fontWeight: '800', color: TEAL }}>{countdown}</Text></Text>
+              )}
             </View>
           </View>
 
@@ -222,7 +245,7 @@ export default function PickupSoonPopup({ pickups, navigation, onChanged }) {
           </View>
 
           <View style={{ marginTop: rs(12), gap: rs(8) }}>
-            <Row icon={Clock} text={`Today, ${clock(at)}${!b._rd && !b._buy && slotLabel(b) ? ` (${slotLabel(b)})` : ''}`} strong />
+            <Row icon={Clock} text={`${dayLabel}, ${clock(at)}${!b._rd && !b._buy && slotLabel(b) ? ` (${slotLabel(b)})` : ''}`} strong />
             <Leg icon={b._rd ? Store : User} label="FROM" name={legs.from.name} address={legs.from.address} />
             <Leg icon={b._rd ? User : Store} label="TO" name={legs.to.name} address={legs.to.address} />
             {b.preview ? <Text style={{ fontSize: rf(12), color: '#6B7280' }}>Customer and address appear after you accept the pickup.</Text> : null}
