@@ -27,6 +27,7 @@ const TAB_FOR_ROUTE = {
   TaskAssign: 'Tasks',
   TaskReport: 'Tasks',
   PickupAssign: 'Tasks',
+  MyJobs: 'Tasks',
   PickupDetails: 'Tasks',
   PickupCalendar: 'Tasks',
   PickupRecords: 'Tasks',
@@ -152,6 +153,7 @@ import MonthlySummaryScreen from '../screens/MonthlySummaryScreen';
 import LeaveReportScreen from '../screens/LeaveReportScreen';
 import JobReportScreen from '../screens/JobReportScreen';
 import PickupAssignScreen from '../screens/PickupAssignScreen';
+import MyJobsScreen from '../screens/MyJobsScreen';
 import PickupDetailsScreen from '../screens/PickupDetailsScreen';
 import PickupCalendarScreen from '../screens/PickupCalendarScreen';
 import PickupRecordsScreen from '../screens/PickupRecordsScreen';
@@ -279,6 +281,7 @@ export default function TechnicianNavigator({ session, onLogout }) {
         <Stack.Screen name="LeaveReport" component={LeaveReportScreen} options={{ headerShown: false }} />
         <Stack.Screen name="TaskReport" component={JobReportScreen} options={{ headerShown: false }} />
         <Stack.Screen name="PickupAssign" component={PickupAssignScreen} options={{ title: 'My Pickups' }} />
+        <Stack.Screen name="MyJobs" component={MyJobsScreen} options={{ headerShown: false }} />
         <Stack.Screen name="PickupDetails" component={PickupDetailsScreen} options={{ headerShown: false }} />
         <Stack.Screen name="PickupCalendar" component={PickupCalendarScreen} options={{ headerShown: false }} />
         <Stack.Screen name="PickupRecords" component={PickupRecordsScreen} options={{ headerShown: false }} />
