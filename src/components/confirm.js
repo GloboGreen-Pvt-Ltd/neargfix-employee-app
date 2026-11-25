@@ -48,12 +48,12 @@ function inferType(title, message, preset) {
  *
  *   type:     'success' | 'error' | 'warning' | 'info'  (default: inferred)
  *   preset:   'done' | 'error'   (older call sites; same as type success / error)
- *   duration: seconds (default 3)
+ *   duration: seconds (default by type: success 1, info 1.5, warning 2, error 3)
  * Text is passed through sanitizeText, so a raw technical error can't leak.
  */
 export function notify(title, message = '', options = {}) {
-  const { type, preset, duration = 3 } = options || {};
+  const { type, preset, duration } = options || {};
   const t = sanitizeText(String(title || ''));
   const m = message ? sanitizeText(String(message)) : '';
-  showToast({ type: type || inferType(t, m, preset), title: t, message: m, duration: duration * 1000 });
+  showToast({ type: type || inferType(t, m, preset), title: t, message: m, duration: duration ? duration * 1000 : undefined });
 }

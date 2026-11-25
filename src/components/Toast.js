@@ -19,14 +19,17 @@ export const TOAST_TYPES = {
 };
 
 const DEFAULT_MS = 3000;
+const TYPE_MS = { success: 1000, info: 1500, warning: 2000, error: 3000 };
+const ANIM_MS = 150;
 // Clears the floating bottom navigation (bar + its gap) on phones and tablets.
 const NAV_CLEARANCE = 96;
 
 let host = null; // the mounted ToastHost's show()
 let pending = null; // a toast fired before the host mounted
 
-export function showToast({ type = 'info', title = '', message = '', duration = DEFAULT_MS } = {}) {
-  const t = { type: TOAST_TYPES[type] ? type : 'info', title: String(title || ''), message: message ? String(message) : '', duration };
+export function showToast({ type = 'info', title = '', message = '', duration } = {}) {
+  const kind = TOAST_TYPES[type] ? type : 'info';
+  const t = { type: kind, title: String(title || ''), message: message ? String(message) : '', duration: duration || TYPE_MS[kind] };
   if (!t.title && !t.message) return;
   if (host) host(t); else pending = t;
 }
@@ -43,7 +46,7 @@ export function ToastHost() {
   useEffect(() => {
     const hide = () => {
       clearTimeout(timer.current);
-      Animated.timing(anim, { toValue: 0, duration: 160, useNativeDriver: true }).start(({ finished }) => {
+      Animated.timing(anim, { toValue: 0, duration: ANIM_MS, useNativeDriver: true }).start(({ finished }) => {
         if (finished) { current.current = null; setToast(null); }
       });
     };
@@ -57,7 +60,7 @@ export function ToastHost() {
         AccessibilityInfo.announceForAccessibility?.([t.title, t.message].filter(Boolean).join('. '));
       }
       // Same toast again: stays up (also cancels a fade-out in progress).
-      Animated.timing(anim, { toValue: 1, duration: 200, useNativeDriver: true }).start();
+      Animated.timing(anim, { toValue: 1, duration: ANIM_MS, useNativeDriver: true }).start();
       timer.current = setTimeout(hide, t.duration || DEFAULT_MS);
     };
     host = show;
