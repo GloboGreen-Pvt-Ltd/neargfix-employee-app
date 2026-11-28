@@ -67,12 +67,12 @@ const mci = (name) => ({ size, color }) => <MaterialCommunityIcons name={name} s
 // Presentation only, keyed by the existing item keys: solid icon tile colour,
 // icon, and row subtitle. Handlers stay in the sections list below.
 const ITEM_LOOK = {
-  profile:  { icon: ion('person'),        bg: C.green,  fg: '#FFFFFF', sub: 'View and manage your profile information' },
-  work:     { icon: ion('briefcase'),     bg: C.yellow, fg: '#FFFFFF', sub: 'Your work experience details' },
-  kyc:      { icon: ion('document-text'), bg: C.blue,   fg: '#FFFFFF', sub: 'Manage your KYC documents' },
-  terms:    { icon: mci('script-text'),   bg: C.navy,   fg: '#FFFFFF', sub: 'Read our terms and conditions' },
-  privacy:  { icon: mci('shield-check'),  bg: C.leaf,   fg: '#FFFFFF', sub: 'Learn about your privacy' },
-  help:     { icon: ion('headset'),       bg: C.yellow, fg: '#FFFFFF', sub: "We're here to help" },
+  profile:  { icon: ion('person-outline'),        bg: C.green,  fg: '#FFFFFF', sub: 'View and manage your profile information' },
+  work:     { icon: ion('briefcase-outline'),     bg: C.yellow, fg: '#FFFFFF', sub: 'Your work experience details' },
+  kyc:      { icon: ion('document-text-outline'), bg: C.blue,   fg: '#FFFFFF', sub: 'Manage your KYC documents' },
+  terms:    { icon: mci('script-text-outline'),   bg: C.navy,   fg: '#FFFFFF', sub: 'Read our terms and conditions' },
+  privacy:  { icon: mci('shield-check-outline'),  bg: C.leaf,   fg: '#FFFFFF', sub: 'Learn about your privacy' },
+  help:     { icon: ion('headset-outline'),       bg: C.yellow, fg: '#FFFFFF', sub: "We're here to help" },
 };
 
 function initialsFromName(name) {
@@ -358,8 +358,9 @@ function MenuRow({ item, last }) {
         borderBottomWidth: last ? 0 : 1, borderBottomColor: C.divider,
       }}
     >
-      <View style={{ width: rs(40), height: rs(40), borderRadius: rs(12), backgroundColor: look.bg, alignItems: 'center', justifyContent: 'center', marginRight: rs(12) }}>
-        <Icon size={19} color={look.fg} strokeWidth={ICON_STROKE} />
+      <View style={{ width: rs(40), height: rs(40), borderRadius: rs(12), backgroundColor: '#E6F2F4', alignItems: 'center', justifyContent: 'center', marginRight: rs(12) }}>
+        {/* Same tile as Security / Partner My Account: light teal tint, teal outline glyph. */}
+        <Icon size={19} color="#035C6C" strokeWidth={ICON_STROKE} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={{ fontSize: 13.5, fontWeight: '700', color: C.ink }} numberOfLines={1}>{item.label}</Text>
